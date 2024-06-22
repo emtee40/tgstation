@@ -7,13 +7,16 @@
  * * mecha_attacker: Mech attacking this target
  * * user: mob that initiated the attack from inside the mech as a controller
  */
-/atom/proc/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user)
+/atom/proc/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user, mecha_attack_cooldown)
 	SHOULD_CALL_PARENT(TRUE)
-	SEND_SIGNAL(src, COMSIG_ATOM_ATTACK_MECH, mecha_attacker, user)
+	SEND_SIGNAL(src, COMSIG_ATOM_ATTACK_MECH, mecha_attacker, user, mecha_attack_cooldown)
 	log_combat(user, src, "attacked", mecha_attacker, "(COMBAT MODE: [uppertext(user.combat_mode)] (DAMTYPE: [uppertext(mecha_attacker.damtype)])")
 	return 0
 
-/turf/closed/wall/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user)
+/turf/closed/wall/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user, mecha_attack_cooldown)
+	if(!user.combat_mode)
+		return 0
+
 	mecha_attacker.do_attack_animation(src)
 	switch(mecha_attacker.damtype)
 		if(BRUTE)
@@ -28,10 +31,14 @@
 		playsound(src, 'sound/effects/meteorimpact.ogg', 100, TRUE)
 	else
 		add_dent(WALL_DENT_HIT)
+	TIMER_COOLDOWN_START(mecha_attacker, COOLDOWN_MECHA_MELEE_ATTACK, mecha_attack_cooldown)
 	..()
 	return 100 //this is an arbitrary "damage" number since the actual damage is rng dismantle
 
-/obj/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user)
+/obj/structure/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user, mecha_attack_cooldown)
+	if(!user.combat_mode)
+		return 0
+
 	mecha_attacker.do_attack_animation(src)
 	switch(mecha_attacker.damtype)
 		if(BRUTE)
@@ -41,15 +48,35 @@
 		else
 			return 0
 	mecha_attacker.visible_message(span_danger("[mecha_attacker] hits [src]!"), span_danger("You hit [src]!"), null, COMBAT_MESSAGE_RANGE)
+	TIMER_COOLDOWN_START(mecha_attacker, COOLDOWN_MECHA_MELEE_ATTACK, mecha_attack_cooldown)
 	..()
 	return take_damage(mecha_attacker.force * 3, mecha_attacker.damtype, "melee", FALSE, get_dir(src, mecha_attacker)) // multiplied by 3 so we can hit objs hard but not be overpowered against mobs.
 
-/obj/structure/window/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user)
+/obj/machinery/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user, mecha_attack_cooldown)
+	if(!user.combat_mode)
+		return 0
+
+	mecha_attacker.do_attack_animation(src)
+	switch(mecha_attacker.damtype)
+		if(BRUTE)
+			playsound(src, 'sound/weapons/punch4.ogg', 50, TRUE)
+		if(BURN)
+			playsound(src, 'sound/items/welder.ogg', 50, TRUE)
+		else
+			return 0
+	mecha_attacker.visible_message(span_danger("[mecha_attacker] hits [src]!"), span_danger("You hit [src]!"), null, COMBAT_MESSAGE_RANGE)
+	TIMER_COOLDOWN_START(mecha_attacker, COOLDOWN_MECHA_MELEE_ATTACK, mecha_attack_cooldown)
+	..()
+	return take_damage(mecha_attacker.force * 3, mecha_attacker.damtype, "melee", FALSE, get_dir(src, mecha_attacker)) // multiplied by 3 so we can hit objs hard but not be overpowered against mobs.
+
+/obj/structure/window/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user, mecha_attack_cooldown)
 	if(!can_be_reached())
 		return 0
 	return ..()
 
-/mob/living/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user)
+/mob/living/mech_melee_attack(obj/vehicle/sealed/mecha/mecha_attacker, mob/living/user, mecha_attack_cooldown)
+	TIMER_COOLDOWN_START(mecha_attacker, COOLDOWN_MECHA_MELEE_ATTACK, mecha_attack_cooldown)
+
 	if(!user.combat_mode)
 		step_away(src, mecha_attacker)
 		log_combat(user, src, "pushed", mecha_attacker)
