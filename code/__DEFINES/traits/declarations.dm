@@ -1146,6 +1146,11 @@ Remember to update _globalvars/traits.dm if you're adding/removing/renaming trai
 /// Trait applied to objects and mobs that can attack a boulder and break it down. (See /obj/item/boulder/manual_process())
 #define TRAIT_BOULDER_BREAKER "boulder_breaker"
 
+/// Appiled when wizard buy (/datum/spellbook_entry/perks/sale_off) perk.
+/// Give 50/25% chance not spend a spellbook charge on 1/2 cost spell.
+/// Appiled it wizard can't refund any spells.
+#define TRAIT_SPELL_FOR_SALE "spell_for_sale"
+
 /// Trait given to mobs wearing the clown mask
 #define TRAIT_PERCEIVED_AS_CLOWN "perceived_as_clown"
 /// Does this item bypass ranged armor checks?
