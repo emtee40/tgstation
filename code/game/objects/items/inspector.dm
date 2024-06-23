@@ -8,7 +8,7 @@
  */
 /obj/item/inspector
 	name = "\improper N-spect scanner"
-	desc = "Central Command-issued inspection device. Performs inspections according to Nanotrasen protocols when activated, then prints an encrypted report regarding the maintenance of the station. Definitely not giving you cancer."
+	desc = "Central Command standard issue inspection device. Can perform either wide area scans that central command can use to verify the security of the station, or detailed scans to determine if an item is contraband."
 	icon = 'icons/obj/devices/scanner.dmi'
 	icon_state = "inspector"
 	worn_icon_state = "salestagger"
@@ -32,6 +32,8 @@
 	var/cell_cover_open = FALSE
 	///Energy used per print.
 	var/energy_per_print = INSPECTOR_ENERGY_USAGE_NORMAL
+	///Does this item scan for contraband correctly? If not, will provide a flipped response.
+	var/scans_correctly = TRUE
 
 /obj/item/inspector/Initialize(mapload)
 	. = ..()
@@ -92,6 +94,25 @@
 		. += "The slot for a cell is empty."
 	else
 		. += "\The [cell] is firmly in place. [span_info("Ctrl-click with an empty hand to remove it.")]"
+
+/obj/item/inspector/interact_with_atom(atom/interacting_with, mob/living/user, list/modifiers)
+	. = ..()
+	if(!interacting_with.can_interact(user, TRUE))
+		return
+	if(cell_cover_open)
+		balloon_alert(user, "close cover first")
+		return
+	if(!cell || !cell.use(INSPECTOR_ENERGY_USAGE_LOW))
+		balloon_alert(user, "check cell")
+		return
+	var/contraband_status = interacting_with.is_contraband()
+	if((!contraband_status && scans_correctly) || (contraband_status && !scans_correctly))
+		playsound(src, 'sound/machines/ping.ogg', 20)
+		balloon_alert(user, "clear")
+		return
+
+	playsound(src, 'sound/machines/uplinkerror.ogg', 40)
+	balloon_alert(user, "contraband detected")
 
 /**
  * Create our report
@@ -182,6 +203,7 @@
 	var/max_mode = CLOWN_INSPECTOR_PRINT_SOUND_MODE_LAST
 	///names of modes, ordered first to last
 	var/list/mode_names = list("normal", "classic", "honk", "fafafoggy")
+	scans_correctly = FALSE
 
 /obj/item/inspector/clown/attack(mob/living/M, mob/living/user)
 	. = ..()
